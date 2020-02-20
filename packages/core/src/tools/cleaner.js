@@ -121,9 +121,18 @@ const createBundleBank = (appRaw, event = {}) => {
 const maskOutput = output => _.pick(output, 'results', 'status');
 
 const normalizeEmptyRequestFields = (shouldCleanup, field, req) => {
-  const handleEmpty = req.removeMissingValuesFrom[field]
-    ? key => delete req[field][key]
-    : key => (req[field][key] = '');
+  const handleEmpty = key => {
+    const value = req[field][key];
+    const cleaned = value.replace(/{{.*}}/g, '').trim();
+
+    if (value !== cleaned) {
+      req[field][key] = cleaned;
+    }
+
+    return !cleaned && req.removeMissingValuesFrom[field]
+      ? delete req[field][key]
+      : cleaned;
+  };
 
   Object.entries(req[field]).forEach(([key, value]) => {
     if (shouldCleanup(value)) {
